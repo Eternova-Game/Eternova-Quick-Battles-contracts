@@ -4,17 +4,17 @@
 
 * Para EMPEZAR la batalla, llamar al metodo "startBattle(address opponent, uint[3] calldata troopsAmount)".
 
-* Luego, para continuar con los turnos del juego, hay que llamar a "requestBattle(uint id, uint[3] calldata troopsAmount)" o "respondBattle(uint id, uint[3] calldata troopsAmount)", según corresponda. Por ej:
-Jugador A desafia al jugador B:
-PRIMER ROUND:
-- StartBattle (firmado por el jugador A).
-- RespondBattle (firmado por el jugador B).
-SEGUNDO ROUND:
-- RequestBattle (firmado por el jugador B).
-- RespondBattle (firmado por el jugador A).
-TERCER ROUND:
-- RequestBattle (firmado por el jugador A).
-- RespondBattle (firmado por el jugador B). 
+* Luego, para continuar con los turnos del juego, hay que llamar a "requestBattle(uint id, uint[3] calldata troopsAmount)" o "respondBattle(uint id, uint[3] calldata troopsAmount)", según corresponda. 
+* Por ej: Jugador A desafia al jugador B:
+    - PRIMER ROUND:
+        - StartBattle (firmado por el jugador A).
+        - RespondBattle (firmado por el jugador B).
+    - SEGUNDO ROUND:
+        - RequestBattle (firmado por el jugador B).
+        - RespondBattle (firmado por el jugador A).
+    - TERCER ROUND:
+        - RequestBattle (firmado por el jugador A).
+        - RespondBattle (firmado por el jugador B). 
 
 ## Metodos para consulta de datos
 
