@@ -3,10 +3,12 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 contract EternovaQuickBattles is Ownable{
 	
 	using Counters for Counters.Counter;
+	using EnumerableSet for EnumerableSet.UintSet;
 
     Counters.Counter private _battleIds;
 
@@ -21,21 +23,6 @@ contract EternovaQuickBattles is Ownable{
 		uint defense;		
 	}
 
-	struct BattleData {
-		address creator;
-		address opponent;
-		uint currentRound;
-		address nextMove;
-		uint predatorAttackingUnits;
-		uint proximusAttackingUnits;
-		uint bountyAttackingUnits;
-		uint predatorDefendingUnits;
-		uint proximusDefendingUnits;
-		uint bountyDefendingUnits;
-		uint creatorCityLife;
-		uint opponentCityLife;
-	}
-
 	Troop private predator = Troop(40,100);
 	Troop private proximusCobra = Troop(200,200);
 	Troop private bounty_hunters = Troop(150,50);
@@ -45,6 +32,7 @@ contract EternovaQuickBattles is Ownable{
 	uint constant PREDATOR_UNITS = 5;
 	uint constant PROXIMUS_COBRA_UNITS = 2;
 	uint constant BOUNTY_HUNTERS_UNITS = 3;
+	
 	uint constant STARTING_LIFE = 500;
 
 	uint constant MAX_UNITS_FIRST_ROUND = 8;
@@ -58,10 +46,29 @@ contract EternovaQuickBattles is Ownable{
 	uint constant SECOND_ROUND = 2;
 	uint constant THIRD_ROUND = 3;
 
-	//Creator => opponent => battleId
-	mapping (address => mapping (address => uint)) private currentlyFighting;
+	struct BattleData {
+		address creator;
+		address opponent;
+		uint currentRound;
+		address nextMove;
+		uint predatorAttackingUnits;
+		uint proximusAttackingUnits;
+		uint bountyAttackingUnits;
+		uint predatorDefendingUnits;
+		uint proximusDefendingUnits;
+		uint bountyDefendingUnits;
+		uint creatorCityLife;
+		uint opponentCityLife;
+		address winner;
+	}
 
+	//BattleId => Data
 	mapping (uint => BattleData) private battle;
+
+	//User => [battleId]
+	mapping(address => EnumerableSet.UintSet) private userBattle;
+
+	mapping(address => mapping(address => bool)) currentlyFighting;
 			
 	constructor() {
 		roundMaxUnits[1] = MAX_UNITS_FIRST_ROUND;		
@@ -69,11 +76,14 @@ contract EternovaQuickBattles is Ownable{
 		roundMaxUnits[3] = MAX_UNITS_THIRD_ROUND;		
 	}
 
-	function startBattle(address opponent, uint[3] calldata troopsAmount) public{
-		require(currentlyFighting[msg.sender][opponent] == 0, "Use requestBattle");
+	function startBattle(address opponent, uint[3] calldata troopsAmount) external returns(uint){
+		require(!areCurrentlyFighting(msg.sender, opponent), "Use requestBattle");
 		require(troopsAmount[0] <= PREDATOR_UNITS,"Exceeds Predators max");
 		require(troopsAmount[1] <= PROXIMUS_COBRA_UNITS,"Exceeds Proximus Cobra max");
 		require(troopsAmount[2] <= BOUNTY_HUNTERS_UNITS,"Exceeds Bounty Hunter max");
+	
+		uint totalTroops = troopsAmount[0] + troopsAmount[1] + troopsAmount[2];
+		require(totalTroops <= roundMaxUnits[FIRST_ROUND],"Too many troops!");
 
 		_battleIds.increment();
 		
@@ -89,17 +99,61 @@ contract EternovaQuickBattles is Ownable{
 			0, //proximusDefendingUnits
 			0, //bountyDefendingUnits
 			STARTING_LIFE, //creatorCityLife
-			STARTING_LIFE //opponentCityLife
+			STARTING_LIFE, //opponentCityLife
+			address(0) //Winner
 			);
 
 		setBattle(_battleIds.current(), data);
-		currentlyFighting[msg.sender][opponent] = _battleIds.current();
-				
+		userBattle[msg.sender].add(_battleIds.current());
+		currentlyFighting[msg.sender][opponent] = true;				
 		emit RoundStarted(_battleIds.current(), data.currentRound);
+
+		return _battleIds.current();
 	}
 
 	//Troops amount for each type [predator, proximusCobra,bounty_hunters]	
-	function requestBattle(uint id, uint[3] calldata troopsAmount) public{
+	function requestBattle(uint id, uint[3] calldata troopsAmount) external{
+		validateBattleData(id, troopsAmount);
+		BattleData memory data = getBattleData(id);
+		
+		data = BattleData(
+			data.creator,
+			data.opponent,
+			data.currentRound, //currentRound
+			data.nextMove == data.creator ? data.opponent : data.creator, //NextMove
+			msg.sender == data.creator ? troopsAmount[0] : 0, //predatorAttackingUnits
+			msg.sender == data.creator ? troopsAmount[1] : 0, //proximusAttackingUnits
+			msg.sender == data.creator ? troopsAmount[2] : 0, //bountyAttackingUnits
+			msg.sender == data.opponent ? troopsAmount[0] : 0, //predatorDefendingUnits
+			msg.sender == data.opponent ? troopsAmount[1] : 0, //proximusDefendingUnits
+			msg.sender == data.opponent ? troopsAmount[2] : 0, //bountyDefendingUnits
+			data.creatorCityLife, //creatorCityLife
+			data.opponentCityLife, //opponentCityLife
+			address(0) //winner
+			);
+		setBattle(id, data);
+				
+		emit RoundStarted(id, data.currentRound);
+	}
+
+	//Troops amount for each type [predator,proximusCobra,bounty_hunters]
+	function respondBattle(uint id,uint[3] calldata troopsAmount) external returns(address){
+		validateBattleData(id, troopsAmount);
+		BattleData memory data = getBattleData(id);
+		if (msg.sender == data.creator){
+			data.predatorAttackingUnits = troopsAmount[0];
+			data.proximusAttackingUnits = troopsAmount[1];
+			data.bountyAttackingUnits = troopsAmount[2];
+		}else{
+			data.predatorDefendingUnits = troopsAmount[0];
+			data.proximusDefendingUnits = troopsAmount[1];
+			data.bountyDefendingUnits = troopsAmount[2];
+		}
+		
+		return resolveRound(id, data);
+	}
+
+	function validateBattleData(uint id,uint[3] calldata troopsAmount) internal view{
 		require(id <= _battleIds.current(),"Battle id doesn't exist");
 		BattleData memory data = getBattleData(id);
 		require(msg.sender == data.creator || msg.sender == data.opponent,"Can't request this battle");
@@ -112,48 +166,7 @@ contract EternovaQuickBattles is Ownable{
 		uint totalTroops = troopsAmount[0] + troopsAmount[1] + troopsAmount[2];
 
 		require(totalTroops <= roundMaxUnits[currentRound],"Too many troops!");
-		
-		
-		data = BattleData(
-			data.creator,
-			data.opponent,
-			data.currentRound + 1, //currentRound
-			data.nextMove == data.creator ? data.opponent : data.creator, //NextMove
-			msg.sender == data.creator ? troopsAmount[0] : 0, //predatorAttackingUnits
-			msg.sender == data.creator ? troopsAmount[1] : 0, //proximusAttackingUnits
-			msg.sender == data.creator ? troopsAmount[2] : 0, //bountyAttackingUnits
-			msg.sender == data.opponent ? troopsAmount[0] : 0, //predatorDefendingUnits
-			msg.sender == data.opponent ? troopsAmount[1] : 0, //proximusDefendingUnits
-			msg.sender == data.opponent ? troopsAmount[2] : 0, //bountyDefendingUnits
-			STARTING_LIFE, //creatorCityLife
-			STARTING_LIFE //opponentCityLife
-			);
-		setBattle(id, data);
-				
-		emit RoundStarted(id, data.currentRound);
-	}
 
-	//Troops amount for each type [predator,proximusCobra,bounty_hunters]
-	function respondBattle(uint id,uint[3] calldata troopsAmount) external returns(address){
-		require(id <= _battleIds.current(),"Battle id doesn't exist");
-		BattleData memory data = getBattleData(id);
-		require(msg.sender == data.creator || msg.sender == data.opponent,"Can't request this battle");
-		require(data.nextMove == msg.sender,"Not your turn!");
-		require(troopsAmount[0] <= PREDATOR_UNITS,"Exceeds Predators max");
-		require(troopsAmount[1] <= PROXIMUS_COBRA_UNITS,"Exceeds Proximus Cobra max");
-		require(troopsAmount[2] <= BOUNTY_HUNTERS_UNITS,"Exceeds Bounty Hunter max");
-
-		if (msg.sender == data.creator){
-			data.predatorAttackingUnits = troopsAmount[0];
-			data.proximusAttackingUnits = troopsAmount[1];
-			data.bountyAttackingUnits = troopsAmount[2];
-		}else{
-			data.predatorDefendingUnits = troopsAmount[0];
-			data.proximusDefendingUnits = troopsAmount[1];
-			data.bountyDefendingUnits = troopsAmount[2];
-		}
-		
-		return resolveRound(id, data);
 	}
 
 	//Resolves round
@@ -171,7 +184,7 @@ contract EternovaQuickBattles is Ownable{
 		BattleData memory newData = BattleData(
 			data.creator,
 			data.opponent,
-			data.currentRound == THIRD_ROUND ? 0 : data.currentRound + 1, //currentRound
+			data.currentRound, //currentRound
 			data.nextMove,
 			0, //predatorAttackingUnits
 			0, //proximusAttackingUnits
@@ -180,16 +193,23 @@ contract EternovaQuickBattles is Ownable{
 			0, //proximusDefendingUnits
 			0, //bountyDefendingUnits
 			getRemainingLife(creatorCurrentCityLife, getTotalDamage(opponentTotalAttack, creatorTotalDefense)), //creatorCityLife
-			getRemainingLife(opponentCurrentCityLife, getTotalDamage(creatorTotalAttack, opponentTotalDefense)) //opponentCityLife
+			getRemainingLife(opponentCurrentCityLife, getTotalDamage(creatorTotalAttack, opponentTotalDefense)), //opponentCityLife
+			address(0) //Winner
 		);
 		
 		if (data.currentRound == THIRD_ROUND){
 			address winner = newData.creatorCityLife >= newData.opponentCityLife ? data.creator : data.opponent;
-			currentlyFighting[data.creator][data.opponent] = 0;
+			newData.currentRound = 0;
+			newData.nextMove = address(0);
+			newData.winner = winner;
+			currentlyFighting[data.creator][data.opponent] = false;
+			setBattle(id, newData);
 			emit RoundFinished(id, data.currentRound);
 			emit BattleFinished(id, winner, winner == data.creator ? newData.creatorCityLife : newData.opponentCityLife, winner == data.opponent ? newData.creatorCityLife : newData.opponentCityLife);
 			return winner;
 		}
+
+		newData.currentRound = data.currentRound + 1;
 		
 		setBattle(id, newData);
 		emit RoundFinished(id, data.currentRound);				
@@ -197,30 +217,90 @@ contract EternovaQuickBattles is Ownable{
 	}
 	
 	function getTotalDamage(uint attack, uint defense) internal pure returns(uint){
-		unchecked {
-			return attack - defense;
-		}
+		return attack > defense ? attack - defense : 0;
 	}
 	
 	function getRemainingLife(uint currentLife, uint damage) internal pure returns(uint){
-		unchecked {
-			return currentLife - damage;
-		}
+		return currentLife > damage ? currentLife - damage : 0;
 	}
 
-	function getBattleData(uint id) public view returns(BattleData memory){
+	function getBattleData(uint id) internal view returns(BattleData memory){
 		return battle[id];
 	}
 
-	function getCurrentRound(uint id) public view returns(uint currentRound){
-		return battle[id].currentRound;
+	struct PublicBattleData {
+		address creator;
+		address opponent;
+		uint currentRound;
+		address nextMove;
+		uint predatorUnits;
+		uint proximusUnits;
+		uint bountyUnits;
+		uint cityLife;
+		address winner;
+	}
+
+	function getPublicBattleData(uint id) external view returns(PublicBattleData memory data){
+		require(id <= _battleIds.current(),"Battle id doesn't exist");
+		BattleData memory battleData = battle[id];
+		require(msg.sender == battleData.creator || msg.sender == battleData.opponent ,"Unauthorized");
+
+		data.creator = battleData.creator;
+		data.opponent = battleData.opponent;
+		data.currentRound = battleData.currentRound;
+		data.nextMove = battleData.nextMove;
+		data.predatorUnits = msg.sender == data.creator ? battleData.predatorAttackingUnits : battleData.predatorDefendingUnits;
+		data.proximusUnits = msg.sender == data.creator ? battleData.proximusAttackingUnits : battleData.proximusDefendingUnits;
+		data.bountyUnits = msg.sender == data.creator ? battleData.bountyAttackingUnits : battleData.bountyDefendingUnits;
+		data.cityLife = msg.sender == data.creator ? battleData.creatorCityLife : battleData.opponentCityLife;
+		data.winner = battleData.winner;
 	}
 
 	function setBattle(uint id,BattleData memory data) internal{
 		battle[id] = data;
 	}
 
-	function setCurrentlyFighting(uint id,address creator,address opponent) internal{
-		currentlyFighting[creator][opponent] = id;
+	struct BattleDataResponse {
+		uint battleId;
+		address creator;
+		address opponent;
+		uint currentRound;
+		address nextMove;
+		address winner;
 	}
+
+	function getUserBattleData(address user, uint limit, uint offset) external view returns(BattleDataResponse[] memory){
+		require(limit <= 100, "Can't request too many records!");
+		EnumerableSet.UintSet storage _ids = userBattle[user];
+		uint battleCount = _ids.length() <= 100 ? _ids.length() : 100;
+		uint queryLimit = (battleCount > limit && limit != 0 ? limit : battleCount);
+		uint responseIndex;
+		BattleDataResponse[]memory response = new BattleDataResponse[](queryLimit);
+		for (uint i = offset; i < queryLimit; i++){
+			uint id = userBattle[user].at(i);
+			BattleData memory data = battle[id];
+			response[responseIndex] = (
+				BattleDataResponse(
+					id,
+					data.creator,
+					data.opponent,
+					data.currentRound,
+					data.nextMove,
+					data.winner
+				)
+			);
+			responseIndex++;
+		}
+
+		return response;
+	}
+	
+	function areCurrentlyFighting(address creator, address opponent) internal view returns(bool){
+		return currentlyFighting[creator][opponent];
+	}
+
+	function getUserBattleCount(address user) external view returns(uint){
+		return userBattle[user].length();
+	}
+
 }
