@@ -112,7 +112,7 @@ contract EternovaQuickBattles is Ownable{
 	}
 
 	//Troops amount for each type [predator, proximusCobra,bounty_hunters]	
-	function requestBattle(uint id, uint[3] calldata troopsAmount) external{
+	function requestBattle(uint id, uint[3] calldata troopsAmount) external {
 		validateBattleData(id, troopsAmount);
 		BattleData memory data = getBattleData(id);
 		
@@ -120,37 +120,30 @@ contract EternovaQuickBattles is Ownable{
 			data.creator,
 			data.opponent,
 			data.currentRound, //currentRound
-			data.nextMove == data.creator ? data.opponent : data.creator, //NextMove
-			msg.sender == data.creator ? troopsAmount[0] : 0, //predatorAttackingUnits
-			msg.sender == data.creator ? troopsAmount[1] : 0, //proximusAttackingUnits
-			msg.sender == data.creator ? troopsAmount[2] : 0, //bountyAttackingUnits
-			msg.sender == data.opponent ? troopsAmount[0] : 0, //predatorDefendingUnits
-			msg.sender == data.opponent ? troopsAmount[1] : 0, //proximusDefendingUnits
-			msg.sender == data.opponent ? troopsAmount[2] : 0, //bountyDefendingUnits
+			data.nextMove, //NextMove
+			msg.sender == data.creator ? troopsAmount[0] : data.predatorAttackingUnits, //predatorAttackingUnits
+			msg.sender == data.creator ? troopsAmount[1] : data.proximusAttackingUnits, //proximusAttackingUnits
+			msg.sender == data.creator ? troopsAmount[2] : data.bountyAttackingUnits, //bountyAttackingUnits
+			msg.sender == data.opponent ? troopsAmount[0] : data.predatorDefendingUnits, //predatorDefendingUnits
+			msg.sender == data.opponent ? troopsAmount[1] : data.proximusDefendingUnits, //proximusDefendingUnits
+			msg.sender == data.opponent ? troopsAmount[2] : data.bountyDefendingUnits, //bountyDefendingUnits
 			data.creatorCityLife, //creatorCityLife
 			data.opponentCityLife, //opponentCityLife
 			address(0) //winner
 			);
-		setBattle(id, data);
-				
-		emit RoundStarted(id, data.currentRound);
+
+		if (didBothPlayersMoved(data)){
+			resolveRound(id, data);
+		}else{
+			data.nextMove = data.nextMove == data.creator ? data.opponent : data.creator;
+			setBattle(id, data);
+			emit RoundStarted(id, data.currentRound);
+		}
 	}
 
-	//Troops amount for each type [predator,proximusCobra,bounty_hunters]
-	function respondBattle(uint id,uint[3] calldata troopsAmount) external returns(address){
-		validateBattleData(id, troopsAmount);
-		BattleData memory data = getBattleData(id);
-		if (msg.sender == data.creator){
-			data.predatorAttackingUnits = troopsAmount[0];
-			data.proximusAttackingUnits = troopsAmount[1];
-			data.bountyAttackingUnits = troopsAmount[2];
-		}else{
-			data.predatorDefendingUnits = troopsAmount[0];
-			data.proximusDefendingUnits = troopsAmount[1];
-			data.bountyDefendingUnits = troopsAmount[2];
-		}
-		
-		return resolveRound(id, data);
+	function didBothPlayersMoved(BattleData memory data) internal pure returns(bool){
+		return data.predatorAttackingUnits + data.proximusAttackingUnits + data.bountyAttackingUnits > 0 &&
+	data.predatorDefendingUnits + data.proximusDefendingUnits + data.bountyDefendingUnits > 0;
 	}
 
 	function validateBattleData(uint id,uint[3] calldata troopsAmount) internal view{
@@ -166,12 +159,10 @@ contract EternovaQuickBattles is Ownable{
 		uint totalTroops = troopsAmount[0] + troopsAmount[1] + troopsAmount[2];
 
 		require(totalTroops <= roundMaxUnits[currentRound],"Too many troops!");
-
+		require(totalTroops > 0,"Must send troops!");
 	}
 
-	//Resolves round
-	//If last round, returns winner, if not 0x000...
-	function resolveRound (uint id, BattleData memory data) internal returns(address) {		
+	function resolveRound (uint id, BattleData memory data) internal {		
 		uint creatorCurrentCityLife = data.creatorCityLife;
 		uint opponentCurrentCityLife = data.opponentCityLife;
 		//Creator
@@ -206,14 +197,13 @@ contract EternovaQuickBattles is Ownable{
 			setBattle(id, newData);
 			emit RoundFinished(id, data.currentRound);
 			emit BattleFinished(id, winner, winner == data.creator ? newData.creatorCityLife : newData.opponentCityLife, winner == data.opponent ? newData.creatorCityLife : newData.opponentCityLife);
-			return winner;
+		}else{
+			newData.currentRound = data.currentRound + 1;
+			
+			setBattle(id, newData);
+			emit RoundFinished(id, data.currentRound);				
 		}
 
-		newData.currentRound = data.currentRound + 1;
-		
-		setBattle(id, newData);
-		emit RoundFinished(id, data.currentRound);				
-		return(address(0));
 	}
 	
 	function getTotalDamage(uint attack, uint defense) internal pure returns(uint){

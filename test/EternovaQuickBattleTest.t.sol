@@ -115,7 +115,7 @@ contract EternovaQuickBattleTest is Test {
         troopsAmount[2] = 1;
         vm.startPrank(user1);
         vm.expectRevert("Battle id doesn't exist");
-        game.respondBattle(2, troopsAmount);
+        game.requestBattle(2, troopsAmount);
     }
 
     function testCannotRespondBattleIfNotCreatorNorOpponent() public{
@@ -125,7 +125,7 @@ contract EternovaQuickBattleTest is Test {
         troopsAmount[2] = 1;
         vm.startPrank(user1);
         vm.expectRevert("Battle id doesn't exist");
-        game.respondBattle(2, troopsAmount);
+        game.requestBattle(2, troopsAmount);
     }
 
     function testRespondToBattleRound1() public{
@@ -142,7 +142,7 @@ contract EternovaQuickBattleTest is Test {
         defenseAmount[2] = 1;
         
         vm.startPrank(user2);
-        game.respondBattle(id, defenseAmount);
+        game.requestBattle(id, defenseAmount);
 
         EternovaQuickBattles.PublicBattleData memory data = game.getPublicBattleData(id);
         assertEq(data.creator,user1);
@@ -184,7 +184,7 @@ contract EternovaQuickBattleTest is Test {
         defenseAmount[2] = 1;
         
         vm.prank(user2);
-        game.respondBattle(id, defenseAmount);
+        game.requestBattle(id, defenseAmount);
         vm.prank(user2);
         EternovaQuickBattles.PublicBattleData memory data = game.getPublicBattleData(id);
         assertEq(data.creator,user1);
@@ -209,7 +209,7 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.cityLife,500);
         assertEq(data.winner,address(0));
 
-        //SECOND ROUND
+        // //SECOND ROUND
         attackAmount[0] = 2;
         attackAmount[1] = 2;
         attackAmount[2] = 2;
@@ -234,7 +234,7 @@ contract EternovaQuickBattleTest is Test {
         defenseAmount[2] = 2;
         
         vm.prank(user1);
-        game.respondBattle(id, defenseAmount);
+        game.requestBattle(id, defenseAmount);
         
         vm.prank(user1);
         data = game.getPublicBattleData(id);
@@ -273,7 +273,7 @@ contract EternovaQuickBattleTest is Test {
         defenseAmount[2] = 3;
         
         vm.prank(user2);
-        game.respondBattle(id, defenseAmount);
+        game.requestBattle(id, defenseAmount);
         
         vm.prank(user2);
         data = game.getPublicBattleData(id);
@@ -319,7 +319,7 @@ contract EternovaQuickBattleTest is Test {
         defenseAmount[2] = 1;
         
         vm.prank(user2);
-        game.respondBattle(id, defenseAmount);
+        game.requestBattle(id, defenseAmount);
         
         //SECOND ROUND
         attackAmount[0] = 2;
@@ -382,42 +382,42 @@ contract EternovaQuickBattleTest is Test {
         
         vm.expectRevert("Battle id doesn't exist");
         vm.prank(user2);
-        game.respondBattle(id + 1, defenseAmount);
+        game.requestBattle(id + 1, defenseAmount);
         
         vm.expectRevert("Can't request this battle");
         vm.prank(user3);
-        game.respondBattle(id, defenseAmount);
+        game.requestBattle(id, defenseAmount);
         
         vm.expectRevert("Not your turn!");
         vm.prank(user1);
-        game.respondBattle(id, defenseAmount);
+        game.requestBattle(id, defenseAmount);
         
         defenseAmount[0] = 10;
         defenseAmount[1] = 2;
         defenseAmount[2] = 2;
         vm.expectRevert("Exceeds Predators max");
         vm.prank(user2);
-        game.respondBattle(id, defenseAmount);
+        game.requestBattle(id, defenseAmount);
         
         defenseAmount[0] = 2;
         defenseAmount[1] = 10;
         defenseAmount[2] = 2;
         vm.expectRevert("Exceeds Proximus Cobra max");
         vm.prank(user2);
-        game.respondBattle(id, defenseAmount);
+        game.requestBattle(id, defenseAmount);
         
         defenseAmount[0] = 2;
         defenseAmount[1] = 2;
         defenseAmount[2] = 10;
         vm.expectRevert("Exceeds Bounty Hunter max");
         vm.prank(user2);
-        game.respondBattle(id, defenseAmount);
+        game.requestBattle(id, defenseAmount);
         
         defenseAmount[0] = 5;
         defenseAmount[1] = 2;
         defenseAmount[2] = 3;
         vm.expectRevert("Too many troops!");
         vm.prank(user2);
-        game.respondBattle(id, defenseAmount);
+        game.requestBattle(id, defenseAmount);
     }
 }
