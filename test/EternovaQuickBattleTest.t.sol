@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "lib/forge-std/src/Test.sol";
-import "../lib/forge-std/src/console.sol";
+import "lib/forge-std/src/console.sol";
 import "../contracts/EternovaQuickBattles.sol";
 
 contract EternovaQuickBattleTest is Test {
@@ -419,5 +419,61 @@ contract EternovaQuickBattleTest is Test {
         vm.expectRevert("Too many troops!");
         vm.prank(user2);
         game.requestBattle(id, defenseAmount);
+    }
+
+    function testHistoricInfo() public{
+        //FIRST ROUND
+        uint[3] memory attackAmount;
+        attackAmount[0] = 1;
+        attackAmount[1] = 2;
+        attackAmount[2] = 2;
+        vm.prank(user1);
+        uint id = game.startBattle(user2, attackAmount);
+        
+        uint[3] memory defenseAmount;
+        defenseAmount[0] = 1;
+        defenseAmount[1] = 1;
+        defenseAmount[2] = 1;
+        
+        vm.prank(user2);
+        game.requestBattle(id, defenseAmount);
+      
+
+        // //SECOND ROUND
+        attackAmount[0] = 2;
+        attackAmount[1] = 2;
+        attackAmount[2] = 2;
+        vm.prank(user2);
+        game.requestBattle(id, attackAmount);        
+              
+        defenseAmount;
+        defenseAmount[0] = 2;
+        defenseAmount[1] = 1;
+        defenseAmount[2] = 2;
+        
+        vm.prank(user1);
+        game.requestBattle(id, defenseAmount);        
+       
+        //THIRD ROUND
+        attackAmount[0] = 2;
+        attackAmount[1] = 2;
+        attackAmount[2] = 3;
+        vm.prank(user1);
+        game.requestBattle(id, attackAmount);
+                     
+        defenseAmount;
+        defenseAmount[0] = 2;
+        defenseAmount[1] = 2;
+        defenseAmount[2] = 3;
+        
+        vm.prank(user2);
+        game.requestBattle(id, defenseAmount);
+
+        vm.prank(user2);
+        EternovaQuickBattles.PublicHistoricBattleData memory data = game.getPublicHistoricBattleData(id);
+
+        assertEq(data.creator,user1);
+        assertEq(data.opponent,user2);
+        
     }
 }
