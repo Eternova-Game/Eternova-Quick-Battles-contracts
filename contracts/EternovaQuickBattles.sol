@@ -169,15 +169,33 @@ contract EternovaQuickBattles is Ownable{
 		BattleData memory data = getBattleData(id);
 		require(msg.sender == data.creator || msg.sender == data.opponent,"Can't request this battle");
 		require(data.nextMove == msg.sender,"Not your turn!");
-		require(troopsAmount[0] <= PREDATOR_UNITS,"Exceeds Predators max");
-		require(troopsAmount[1] <= PROXIMUS_COBRA_UNITS,"Exceeds Proximus Cobra max");
-		require(troopsAmount[2] <= BOUNTY_HUNTERS_UNITS,"Exceeds Bounty Hunter max");
 		
-		uint currentRound = data.currentRound;
-		uint totalTroops = troopsAmount[0] + troopsAmount[1] + troopsAmount[2];
+		uint predatorUsed;
+		uint proximusUsed;
+		uint bountyUsed;
+		uint totalUsed;
 
-		require(totalTroops <= roundMaxUnits[currentRound],"Too many troops!");
-		require(totalTroops > 0,"Must send troops!");
+		for (uint i; i < 3; i++){			
+			if (msg.sender == data.creator){
+				predatorUsed += roundsAmounts[id][i+1].predatorAttackingUnits;
+				proximusUsed += roundsAmounts[id][i+1].proximusAttackingUnits;
+				bountyUsed += roundsAmounts[id][i+1].bountyAttackingUnits;				
+			}else{
+				predatorUsed += roundsAmounts[id][i+1].predatorDefendingUnits;
+				proximusUsed += roundsAmounts[id][i+1].proximusDefendingUnits;
+				bountyUsed += roundsAmounts[id][i+1].bountyDefendingUnits;
+			}
+		}
+		totalUsed += predatorUsed + proximusUsed + bountyUsed;
+
+		require(troopsAmount[0] + predatorUsed <= PREDATOR_UNITS,"Exceeds Predators max");
+		require(troopsAmount[1] + proximusUsed <= PROXIMUS_COBRA_UNITS,"Exceeds Proximus Cobra max");
+		require(troopsAmount[2] + bountyUsed <= BOUNTY_HUNTERS_UNITS,"Exceeds Bounty Hunter max");
+				
+		uint troopsSent = troopsAmount[0] + troopsAmount[1] + troopsAmount[2];
+
+		require(troopsSent > 0,"Must send troops!");
+		require((troopsSent + totalUsed) <= roundMaxUnits[data.currentRound],"Too many troops!");
 	}
 
 	function resolveRound (uint id, BattleData memory data) internal {		
@@ -244,9 +262,7 @@ contract EternovaQuickBattles is Ownable{
 		address opponent;
 		uint currentRound;
 		address nextMove;
-		uint predatorUnits;
-		uint proximusUnits;
-		uint bountyUnits;
+		BattleAmount[3] amounts;
 		uint cityLife;
 		address winner;
 	}
@@ -256,41 +272,30 @@ contract EternovaQuickBattles is Ownable{
 		BattleData memory battleData = battle[id];
 		require(msg.sender == battleData.creator || msg.sender == battleData.opponent ,"Unauthorized");
 
+		BattleAmount[3] memory amount;
+
 		data.creator = battleData.creator;
 		data.opponent = battleData.opponent;
 		data.currentRound = battleData.currentRound;
 		data.nextMove = battleData.nextMove;
-		data.predatorUnits = msg.sender == data.creator ? battleData.amounts.predatorAttackingUnits : battleData.amounts.predatorDefendingUnits;
-		data.proximusUnits = msg.sender == data.creator ? battleData.amounts.proximusAttackingUnits : battleData.amounts.proximusDefendingUnits;
-		data.bountyUnits = msg.sender == data.creator ? battleData.amounts.bountyAttackingUnits : battleData.amounts.bountyDefendingUnits;
-		data.cityLife = msg.sender == data.creator ? battleData.creatorCityLife : battleData.opponentCityLife;
-		data.winner = battleData.winner;
-
-		return data;
-	}
-
-	struct PublicHistoricBattleData {
-		address creator;
-		address opponent;		
-		BattleAmount[3] amounts;		
-		address winner;
-	}
-
-	function getPublicHistoricBattleData(uint id) external view returns(PublicHistoricBattleData memory data){
-		require(id <= _battleIds.current(),"Battle id doesn't exist");
-		BattleData memory battleData = battle[id];
-		require(msg.sender == battleData.creator || msg.sender == battleData.opponent ,"Unauthorized");
-		require(battleData.winner != address(0),"Only ended matches");
-
-		BattleAmount[3] memory amounts;
-
+		
 		for (uint i; i < 3; i++){
-			amounts[i] = roundsAmounts[id][i+1];		
-		}		
-
-		data.creator = battleData.creator;
-		data.opponent = battleData.opponent;
-		data.amounts = amounts;
+			amount[i] = roundsAmounts[id][i+1];
+			if (battleData.winner == address(0)){
+				if (msg.sender == data.creator){
+					amount[i].predatorDefendingUnits = 0;
+					amount[i].proximusDefendingUnits = 0;
+					amount[i].bountyDefendingUnits = 0;
+				}else{
+					amount[i].predatorAttackingUnits = 0;
+					amount[i].proximusAttackingUnits = 0;
+					amount[i].bountyAttackingUnits = 0;
+				}
+			}
+		}
+					
+		data.amounts = amount;
+		data.cityLife = msg.sender == data.creator ? battleData.creatorCityLife : battleData.opponentCityLife;
 		data.winner = battleData.winner;
 
 		return data;

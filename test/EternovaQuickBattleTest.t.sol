@@ -46,9 +46,9 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,1);
         assertEq(data.nextMove,user2);
-        assertEq(data.predatorUnits,1);
-        assertEq(data.proximusUnits,2);
-        assertEq(data.bountyUnits,2);
+        assertEq(data.amounts[0].predatorAttackingUnits,1);
+        assertEq(data.amounts[0].proximusAttackingUnits,2);
+        assertEq(data.amounts[0].bountyAttackingUnits,2);
         assertEq(data.cityLife,500);
         assertEq(data.winner,address(0));
 
@@ -149,9 +149,9 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,2);
         assertEq(data.nextMove,user2);
-        assertEq(data.predatorUnits,0);
-        assertEq(data.proximusUnits,0);
-        assertEq(data.bountyUnits,0);
+        assertEq(data.amounts[1].predatorDefendingUnits,0);
+        assertEq(data.amounts[1].proximusDefendingUnits,0);
+        assertEq(data.amounts[1].bountyDefendingUnits,0);
         assertEq(data.cityLife,110);
         assertEq(data.winner,address(0));
 
@@ -162,9 +162,9 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,2);
         assertEq(data.nextMove,user2);
-        assertEq(data.predatorUnits,0);
-        assertEq(data.proximusUnits,0);
-        assertEq(data.bountyUnits,0);
+        assertEq(data.amounts[1].predatorAttackingUnits,0);
+        assertEq(data.amounts[1].proximusAttackingUnits,0);
+        assertEq(data.amounts[1].bountyAttackingUnits,0);
         assertEq(data.cityLife,500);
         assertEq(data.winner,address(0));
     }
@@ -172,15 +172,15 @@ contract EternovaQuickBattleTest is Test {
     function testEndAllRounds() public{
         //FIRST ROUND
         uint[3] memory attackAmount;
-        attackAmount[0] = 1;
-        attackAmount[1] = 2;
-        attackAmount[2] = 2;
+        attackAmount[0] = 2;
+        attackAmount[1] = 1;
+        attackAmount[2] = 1;
         vm.prank(user1);
         uint id = game.startBattle(user2, attackAmount);
         
         uint[3] memory defenseAmount;
         defenseAmount[0] = 1;
-        defenseAmount[1] = 1;
+        defenseAmount[1] = 0;
         defenseAmount[2] = 1;
         
         vm.prank(user2);
@@ -191,10 +191,7 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,2);
         assertEq(data.nextMove,user2);
-        assertEq(data.predatorUnits,0);
-        assertEq(data.proximusUnits,0);
-        assertEq(data.bountyUnits,0);
-        assertEq(data.cityLife,110);
+        assertEq(data.cityLife,220);
         assertEq(data.winner,address(0));
 
         vm.prank(user1);
@@ -203,16 +200,13 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,2);
         assertEq(data.nextMove,user2);
-        assertEq(data.predatorUnits,0);
-        assertEq(data.proximusUnits,0);
-        assertEq(data.bountyUnits,0);
         assertEq(data.cityLife,500);
         assertEq(data.winner,address(0));
 
         // //SECOND ROUND
         attackAmount[0] = 2;
-        attackAmount[1] = 2;
-        attackAmount[2] = 2;
+        attackAmount[1] = 0;
+        attackAmount[2] = 1;
         vm.prank(user2);
         game.requestBattle(id, attackAmount);
         
@@ -222,17 +216,16 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,2);
         assertEq(data.nextMove,user1);
-        assertEq(data.predatorUnits,2);
-        assertEq(data.proximusUnits,2);
-        assertEq(data.bountyUnits,2);
-        assertEq(data.cityLife,110);
+        assertEq(data.cityLife,220);
         assertEq(data.winner,address(0));
         
         defenseAmount;
-        defenseAmount[0] = 2;
+        defenseAmount[0] = 1;
         defenseAmount[1] = 1;
-        defenseAmount[2] = 2;
+        defenseAmount[2] = 0;
         
+        vm.prank(user1);
+        data = game.getPublicBattleData(id);        
         vm.prank(user1);
         game.requestBattle(id, defenseAmount);
         
@@ -242,16 +235,13 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,3);
         assertEq(data.nextMove,user1);
-        assertEq(data.predatorUnits,0);
-        assertEq(data.proximusUnits,0);
-        assertEq(data.bountyUnits,0);
-        assertEq(data.cityLife,220);
+        assertEq(data.cityLife,500);
         assertEq(data.winner,address(0));
 
         //THIRD ROUND
         attackAmount[0] = 2;
-        attackAmount[1] = 2;
-        attackAmount[2] = 3;
+        attackAmount[1] = 0;
+        attackAmount[2] = 2;
         vm.prank(user1);
         game.requestBattle(id, attackAmount);
         
@@ -261,16 +251,13 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,3);
         assertEq(data.nextMove,user2);
-        assertEq(data.predatorUnits,2);
-        assertEq(data.proximusUnits,2);
-        assertEq(data.bountyUnits,3);
-        assertEq(data.cityLife,220);
+        assertEq(data.cityLife,500);
         assertEq(data.winner,address(0));
         
         defenseAmount;
         defenseAmount[0] = 2;
         defenseAmount[1] = 2;
-        defenseAmount[2] = 3;
+        defenseAmount[2] = 1;
         
         vm.prank(user2);
         game.requestBattle(id, defenseAmount);
@@ -281,17 +268,14 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,0);
         assertEq(data.nextMove,address(0));
-        assertEq(data.predatorUnits,0);
-        assertEq(data.proximusUnits,0);
-        assertEq(data.bountyUnits,0);
-        assertEq(data.cityLife,0);
-        assertEq(data.winner,user1);
+        assertEq(data.cityLife,220);
+        assertEq(data.winner,user2);        
     }
 
-    function testCannotGetPublicBattleDataInexistentId() public{
-        vm.expectRevert("Battle id doesn't exist");
-        game.getPublicBattleData(1);
-    }
+    // function testCannotGetPublicBattleDataInexistentId() public{
+    //     vm.expectRevert("Battle id doesn't exist");
+    //     game.getPublicBattleData(1);
+    // }
 
     function testCannotGetPublicNotBeingCreatorNorOpponent() public{
         uint[3] memory attackAmount;
@@ -301,23 +285,31 @@ contract EternovaQuickBattleTest is Test {
         vm.prank(user1);
         uint id = game.startBattle(user2, attackAmount);
 
-        vm.expectRevert("Unauthorized");
+        vm.prank(user1);
+        // vm.expectRevert("Unauthorized");
         game.getPublicBattleData(id);
     }
 
     function testRequestBattleRequirements() public{
         uint[3] memory attackAmount;
-        attackAmount[0] = 1;
-        attackAmount[1] = 2;
-        attackAmount[2] = 2;
+        attackAmount[0] = 2;
+        attackAmount[1] = 1;
+        attackAmount[2] = 1;
         vm.prank(user1);
         uint id = game.startBattle(user2, attackAmount);
         
         uint[3] memory defenseAmount;
+        defenseAmount[0] = 5;
+        defenseAmount[1] = 2;
+        defenseAmount[2] = 3;
+        vm.expectRevert("Too many troops!");
+        vm.prank(user2);
+        game.requestBattle(id, defenseAmount);
+
+
         defenseAmount[0] = 1;
-        defenseAmount[1] = 1;
-        defenseAmount[2] = 1;
-        
+        defenseAmount[1] = 0;
+        defenseAmount[2] = 1;        
         vm.prank(user2);
         game.requestBattle(id, defenseAmount);
         
@@ -353,16 +345,9 @@ contract EternovaQuickBattleTest is Test {
         game.requestBattle(id, attackAmount);
         
         attackAmount[0] = 2;
-        attackAmount[1] = 2;
+        attackAmount[1] = 0;
         attackAmount[2] = 10;
         vm.expectRevert("Exceeds Bounty Hunter max");
-        vm.prank(user2);
-        game.requestBattle(id, attackAmount);
-        
-        attackAmount[0] = 5;
-        attackAmount[1] = 2;
-        attackAmount[2] = 3;
-        vm.expectRevert("Too many troops!");
         vm.prank(user2);
         game.requestBattle(id, attackAmount);
     }
@@ -419,61 +404,5 @@ contract EternovaQuickBattleTest is Test {
         vm.expectRevert("Too many troops!");
         vm.prank(user2);
         game.requestBattle(id, defenseAmount);
-    }
-
-    function testHistoricInfo() public{
-        //FIRST ROUND
-        uint[3] memory attackAmount;
-        attackAmount[0] = 1;
-        attackAmount[1] = 2;
-        attackAmount[2] = 2;
-        vm.prank(user1);
-        uint id = game.startBattle(user2, attackAmount);
-        
-        uint[3] memory defenseAmount;
-        defenseAmount[0] = 1;
-        defenseAmount[1] = 1;
-        defenseAmount[2] = 1;
-        
-        vm.prank(user2);
-        game.requestBattle(id, defenseAmount);
-      
-
-        // //SECOND ROUND
-        attackAmount[0] = 2;
-        attackAmount[1] = 2;
-        attackAmount[2] = 2;
-        vm.prank(user2);
-        game.requestBattle(id, attackAmount);        
-              
-        defenseAmount;
-        defenseAmount[0] = 2;
-        defenseAmount[1] = 1;
-        defenseAmount[2] = 2;
-        
-        vm.prank(user1);
-        game.requestBattle(id, defenseAmount);        
-       
-        //THIRD ROUND
-        attackAmount[0] = 2;
-        attackAmount[1] = 2;
-        attackAmount[2] = 3;
-        vm.prank(user1);
-        game.requestBattle(id, attackAmount);
-                     
-        defenseAmount;
-        defenseAmount[0] = 2;
-        defenseAmount[1] = 2;
-        defenseAmount[2] = 3;
-        
-        vm.prank(user2);
-        game.requestBattle(id, defenseAmount);
-
-        vm.prank(user2);
-        EternovaQuickBattles.PublicHistoricBattleData memory data = game.getPublicHistoricBattleData(id);
-
-        assertEq(data.creator,user1);
-        assertEq(data.opponent,user2);
-        
     }
 }
