@@ -105,6 +105,7 @@ contract EternovaQuickBattles is Ownable{
 
 		setBattle(_battleIds.current(), data);
 		userBattle[msg.sender].add(_battleIds.current());
+		userBattle[opponent].add(_battleIds.current());
 		currentlyFighting[msg.sender][opponent] = true;				
 		emit RoundStarted(_battleIds.current(), data.currentRound);
 

@@ -39,6 +39,7 @@ contract EternovaQuickBattleTest is Test {
         uint id = game.startBattle(user2, troopsAmount);
 
         assertEq(game.getUserBattleCount(user1), 1);
+        assertEq(game.getUserBattleCount(user2), 1);
         
         vm.prank(user1);
         EternovaQuickBattles.PublicBattleData memory data = game.getPublicBattleData(1);
