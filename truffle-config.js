@@ -1,7 +1,7 @@
 const path = require("path");
 require('dotenv').config({path: './.env'});
 const HDWalletProvider = require("@truffle/hdwallet-provider");
-const AccountIndex = 0;
+const AccountIndex = 1;
 const sapphire = require('@oasisprotocol/sapphire-paratime');
 
 module.exports = {

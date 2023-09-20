@@ -406,4 +406,32 @@ contract EternovaQuickBattleTest is Test {
         vm.prank(user2);
         game.requestBattle(id, defenseAmount);
     }
+
+    function testOpponentInfo() public{
+        uint[3] memory troopsAmount;
+        troopsAmount[0] = 1;
+        troopsAmount[1] = 2;
+        troopsAmount[2] = 2;
+        vm.prank(user1);
+        uint id = game.startBattle(user2, troopsAmount);
+
+        EternovaQuickBattles.BattleDataResponse[] memory data;
+        data = game.getUserBattleData(user2, 10, 0);
+        assertEq(game.getUserBattleCount(user2),1);
+        assertEq(data[0].battleId,1);
+        assertEq(data[0].creator,user1);
+        assertEq(data[0].opponent,user2);
+        assertEq(data[0].currentRound,1);
+        assertEq(data[0].nextMove,user2);
+        assertEq(data[0].winner,address(0));
+
+        data = game.getUserBattleData(user1, 10, 0);
+        assertEq(game.getUserBattleCount(user1),1);
+        assertEq(data[0].battleId,1);
+        assertEq(data[0].creator,user1);
+        assertEq(data[0].opponent,user2);
+        assertEq(data[0].currentRound,1);
+        assertEq(data[0].nextMove,user2);
+        assertEq(data[0].winner,address(0));
+    }
 }
