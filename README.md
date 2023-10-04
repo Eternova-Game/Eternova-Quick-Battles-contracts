@@ -1,26 +1,26 @@
 # Eternova Quick Battles
 
-## Uso de funciones
+## Methos
 
-* Para EMPEZAR la batalla, llamar al metodo "startBattle(address opponent, uint[3] calldata troopsAmount)".
+* To start a battle, call method "startBattle(address opponent, uint[3] calldata troopsAmount)".
 
-* Luego, para el resto de los turnos, hay que llamar a "requestBattle(uint id, uint[3] calldata troopsAmount)"
-* Por ej: Jugador A desafia al jugador B:
-    - PRIMER ROUND:
-        - StartBattle (firmado por el jugador A).
-        - RespondBattle (firmado por el jugador B).
-    - SEGUNDO ROUND:
-        - RequestBattle (firmado por el jugador B).
-        - RespondBattle (firmado por el jugador A).
-    - TERCER ROUND:
-        - RequestBattle (firmado por el jugador A).
-        - RespondBattle (firmado por el jugador B). 
+* Then, for the rest of the turns, you need to call "requestBattle(uint id, uint[3] calldata troopsAmount)"
+* Ex: Player A battles al player B:
+    - FIRST ROUND:
+        - StartBattle (player A).
+        - RespondBattle (player B).
+    - SECOND ROUND:
+        - RequestBattle (player B).
+        - RespondBattle (player A).
+    - THIRD ROUND:
+        - RequestBattle (player A).
+        - RespondBattle (player B). 
 
-## Metodos para consulta de datos
+## Read data
 
-* "getPublicBattleData(uint id)": unicamente llamable por el creador de la batalla o el contrincante. Devuelve la información "publica" de la batalla, es decir, solo los datos propios de quien llama a la función.
+* "getPublicBattleData(uint id)": only callable by the creator of the battle or the opponent. Returns the "public" information of the battle, that is, only the data of the person calling the function.
 
-* "getUserBattleData(address user, uint limit, uint offset)": devuelve el listado de batallas (creador, contrincante, round actual, usuario pendiente de movimiento y ganador -si hubiera, sino zero_address-) del usuario.
+* "getUserBattleData(address user, uint limit, uint offset)": returns the list of battles (creator, opponent, current round, user pending movement and winner - if any -) of the user.
 
 
 ## Test
