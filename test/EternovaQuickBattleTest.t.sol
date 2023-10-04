@@ -50,7 +50,7 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.amounts[0].predatorAttackingUnits,1);
         assertEq(data.amounts[0].proximusAttackingUnits,2);
         assertEq(data.amounts[0].bountyAttackingUnits,2);
-        assertEq(data.cityLife,500);
+        assertEq(data.creatorCityLife,500);
         assertEq(data.winner,address(0));
 
         EternovaQuickBattles.BattleDataResponse[] memory response;
@@ -153,7 +153,7 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.amounts[1].predatorDefendingUnits,0);
         assertEq(data.amounts[1].proximusDefendingUnits,0);
         assertEq(data.amounts[1].bountyDefendingUnits,0);
-        assertEq(data.cityLife,110);
+        assertEq(data.opponentCityLife,110);
         assertEq(data.winner,address(0));
 
         vm.stopPrank();
@@ -166,7 +166,7 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.amounts[1].predatorAttackingUnits,0);
         assertEq(data.amounts[1].proximusAttackingUnits,0);
         assertEq(data.amounts[1].bountyAttackingUnits,0);
-        assertEq(data.cityLife,500);
+        assertEq(data.creatorCityLife,500);
         assertEq(data.winner,address(0));
     }
 
@@ -192,7 +192,7 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,2);
         assertEq(data.nextMove,user2);
-        assertEq(data.cityLife,220);
+        assertEq(data.opponentCityLife,220);
         assertEq(data.winner,address(0));
 
         vm.prank(user1);
@@ -201,7 +201,7 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,2);
         assertEq(data.nextMove,user2);
-        assertEq(data.cityLife,500);
+        assertEq(data.creatorCityLife,500);
         assertEq(data.winner,address(0));
 
         // //SECOND ROUND
@@ -217,7 +217,7 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,2);
         assertEq(data.nextMove,user1);
-        assertEq(data.cityLife,220);
+        assertEq(data.opponentCityLife,220);
         assertEq(data.winner,address(0));
         
         defenseAmount;
@@ -236,7 +236,7 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,3);
         assertEq(data.nextMove,user1);
-        assertEq(data.cityLife,500);
+        assertEq(data.creatorCityLife,500);
         assertEq(data.winner,address(0));
 
         //THIRD ROUND
@@ -252,7 +252,7 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,3);
         assertEq(data.nextMove,user2);
-        assertEq(data.cityLife,500);
+        assertEq(data.creatorCityLife,500);
         assertEq(data.winner,address(0));
         
         defenseAmount;
@@ -269,7 +269,7 @@ contract EternovaQuickBattleTest is Test {
         assertEq(data.opponent,user2);
         assertEq(data.currentRound,0);
         assertEq(data.nextMove,address(0));
-        assertEq(data.cityLife,220);
+        assertEq(data.opponentCityLife,220);
         assertEq(data.winner,user2);        
     }
 
