@@ -264,7 +264,8 @@ contract EternovaQuickBattles is Ownable{
 		uint currentRound;
 		address nextMove;
 		BattleAmount[3] amounts;
-		uint cityLife;
+		uint creatorCityLife;
+		uint opponentCityLife;
 		address winner;
 	}
 
@@ -296,7 +297,8 @@ contract EternovaQuickBattles is Ownable{
 		}
 					
 		data.amounts = amount;
-		data.cityLife = msg.sender == data.creator ? battleData.creatorCityLife : battleData.opponentCityLife;
+		data.creatorCityLife = battleData.creatorCityLife;
+		data.opponentCityLife = battleData.opponentCityLife;
 		data.winner = battleData.winner;
 
 		return data;
