@@ -5,7 +5,7 @@
 * To start a battle, call method "startBattle(address opponent, uint[3] calldata troopsAmount)".
 
 * Then, for the rest of the turns, you need to call "requestBattle(uint id, uint[3] calldata troopsAmount)"
-* Ex: Player A battles al player B:
+* Ex: Player A battles player B:
     - FIRST ROUND:
         - StartBattle (player A).
         - RespondBattle (player B).
