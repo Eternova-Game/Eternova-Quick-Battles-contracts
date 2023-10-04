@@ -268,10 +268,10 @@ contract EternovaQuickBattles is Ownable{
 		address winner;
 	}
 
-	function getPublicBattleData(uint id) external view returns(PublicBattleData memory data){
+	function getPublicBattleData(uint id) public view returns(PublicBattleData memory data){
 		require(id <= _battleIds.current(),"Battle id doesn't exist");
 		BattleData memory battleData = battle[id];
-		require(msg.sender == battleData.creator || msg.sender == battleData.opponent ,"Unauthorized");
+		require(msg.sender == battleData.creator  || msg.sender == battleData.opponent || msg.sender == address(this)  ,"Unauthorized");
 
 		BattleAmount[3] memory amount;
 
@@ -300,6 +300,15 @@ contract EternovaQuickBattles is Ownable{
 		data.winner = battleData.winner;
 
 		return data;
+	}
+
+	function getPublicBattleDataArray(uint[] memory _ids) external view returns(PublicBattleData[] memory arrayData){
+		arrayData = new PublicBattleData[](_ids.length);
+		for(uint i; i < _ids.length; i++){
+			arrayData[i] = getPublicBattleData(_ids[i]);
+		}
+		
+		return arrayData;
 	}
 
 	function setBattle(uint id,BattleData memory data) internal{
